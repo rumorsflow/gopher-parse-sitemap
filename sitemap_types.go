@@ -9,11 +9,22 @@ type sitemapEntry struct {
 	ChangeFrequency    Frequency `xml:"changefreq,omitempty"`
 	Priority           float32   `xml:"priority,omitempty"`
 	Images             []Image   `xml:"image,omitempty"`
+	News               *News     `xml:"news,omitempty"`
 }
 
 type Image struct {
 	ImageLocation string `xml:"loc,omitempty"`
 	ImageTitle    string `xml:"title,omitempty"`
+}
+
+type News struct {
+	Publication struct {
+		Name     string `xml:"name,omitempy"`
+		Language string `xml:"language,omitempy"`
+	} `xml:"publication,omitempy"`
+	PublicationDate       string `xml:"publication_date,omitempy"`
+	ParsedPublicationDate *time.Time
+	Title                 string `xml:"title,omitempy"`
 }
 
 func newSitemapEntry() *sitemapEntry {
@@ -41,6 +52,17 @@ func (e *sitemapEntry) GetChangeFrequency() Frequency {
 
 func (e *sitemapEntry) GetPriority() float32 {
 	return e.Priority
+}
+
+func (e *sitemapEntry) GetNews() *News {
+	return e.News
+}
+
+func (n *News) GetPublicationDate() *time.Time {
+	if n.ParsedPublicationDate == nil && n.PublicationDate != "" {
+		n.ParsedPublicationDate = parseDateTime(n.PublicationDate)
+	}
+	return n.ParsedPublicationDate
 }
 
 type sitemapIndexEntry struct {
@@ -71,11 +93,14 @@ func parseDateTime(value string) *time.Time {
 
 	t, err := time.Parse(time.RFC3339, value)
 	if err != nil {
-		// second chance
-		// try parse as short format
-		t, err = time.Parse("2006-01-02", value)
+		t, err = time.Parse("2006-01-02T15:04-07:00", value)
 		if err != nil {
-			return nil
+			// second chance
+			// try parse as short format
+			t, err = time.Parse("2006-01-02", value)
+			if err != nil {
+				return nil
+			}
 		}
 	}
 

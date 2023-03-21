@@ -49,6 +49,7 @@ type Entry interface {
 	GetChangeFrequency() Frequency
 	GetPriority() float32
 	GetImages() []Image
+	GetNews() *News
 }
 
 // IndexEntry is an interface describes an element \ an URL in a sitemap index file.
