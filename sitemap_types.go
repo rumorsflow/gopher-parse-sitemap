@@ -25,6 +25,7 @@ type News struct {
 	PublicationDate       string `xml:"publication_date,omitempy"`
 	ParsedPublicationDate *time.Time
 	Title                 string `xml:"title,omitempy"`
+	Keywords              string `xml:"keywords,omitempy"`
 }
 
 func newSitemapEntry() *sitemapEntry {
