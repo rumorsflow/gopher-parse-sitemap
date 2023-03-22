@@ -50,7 +50,7 @@ func parseLoop(ctx context.Context, reader io.Reader, parser elementParser) erro
 	for {
 		select {
 		case <-ctx.Done():
-			break
+			return ctx.Err()
 		default:
 		}
 
