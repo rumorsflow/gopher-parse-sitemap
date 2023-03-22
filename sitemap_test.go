@@ -1,6 +1,7 @@
 package sitemap
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -13,7 +14,7 @@ import (
  *  	Examples
  */
 func ExampleParseFromFile() {
-	err := ParseFromFile("./testdata/sitemap.xml", func(e Entry) error {
+	err := ParseFromFile(context.Background(), "./testdata/sitemap.xml", func(e Entry) error {
 		fmt.Println(e.GetLocation())
 		return nil
 	})
@@ -24,7 +25,7 @@ func ExampleParseFromFile() {
 
 func ExampleParseIndexFromFile() {
 	result := make([]string, 0, 0)
-	err := ParseIndexFromFile("./testdata/sitemap-index.xml", func(e IndexEntry) error {
+	err := ParseIndexFromFile(context.Background(), "./testdata/sitemap-index.xml", func(e IndexEntry) error {
 		result = append(result, e.GetLocation())
 		return nil
 	})
@@ -41,7 +42,7 @@ func TestParseSitemap(t *testing.T) {
 		counter int
 		sb      strings.Builder
 	)
-	err := ParseFromFile("./testdata/sitemap.xml", func(e Entry) error {
+	err := ParseFromFile(context.Background(), "./testdata/sitemap.xml", func(e Entry) error {
 		counter++
 
 		fmt.Fprintln(&sb, e.GetLocation())
@@ -76,7 +77,7 @@ func TestParseSitemap(t *testing.T) {
 func TestParseSitemap_BreakingOnError(t *testing.T) {
 	var counter = 0
 	breakErr := errors.New("break error")
-	err := ParseFromFile("./testdata/sitemap.xml", func(e Entry) error {
+	err := ParseFromFile(context.Background(), "./testdata/sitemap.xml", func(e Entry) error {
 		counter++
 		return breakErr
 	})
@@ -95,7 +96,7 @@ func TestParseSitemapIndex(t *testing.T) {
 		counter int
 		sb      strings.Builder
 	)
-	err := ParseIndexFromFile("./testdata/sitemap-index.xml", func(e IndexEntry) error {
+	err := ParseIndexFromFile(context.Background(), "./testdata/sitemap-index.xml", func(e IndexEntry) error {
 		counter++
 
 		fmt.Fprintln(&sb, e.GetLocation())
@@ -133,7 +134,7 @@ func TestImages(t *testing.T) {
 	}
 	index := 0
 
-	err := ParseFromFile("./testdata/sitemap-image.xml", func(e Entry) error {
+	err := ParseFromFile(context.Background(), "./testdata/sitemap-image.xml", func(e Entry) error {
 		images := e.GetImages()
 		for _, image := range images {
 			if image.ImageLocation != expected[index] {
@@ -153,7 +154,7 @@ func TestParseSitemapNews(t *testing.T) {
 		counter int
 		sb      strings.Builder
 	)
-	err := ParseFromFile("./testdata/sitemap-news.xml", func(e Entry) error {
+	err := ParseFromFile(context.Background(), "./testdata/sitemap-news.xml", func(e Entry) error {
 		counter++
 
 		fmt.Fprintln(&sb, e.GetLocation())

@@ -1,6 +1,7 @@
 package sitemap
 
 import (
+	"context"
 	"encoding/xml"
 	"io"
 )
@@ -43,10 +44,16 @@ func indexEntryParser(decoder *xml.Decoder, se *xml.StartElement, consume IndexE
 
 type elementParser func(*xml.Decoder, *xml.StartElement) error
 
-func parseLoop(reader io.Reader, parser elementParser) error {
+func parseLoop(ctx context.Context, reader io.Reader, parser elementParser) error {
 	decoder := xml.NewDecoder(reader)
 
 	for {
+		select {
+		case <-ctx.Done():
+			break
+		default:
+		}
+
 		t, tokenError := decoder.Token()
 
 		if tokenError == io.EOF {
