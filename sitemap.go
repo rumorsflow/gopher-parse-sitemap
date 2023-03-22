@@ -4,12 +4,16 @@ package sitemap
 
 import (
 	"compress/gzip"
+	"context"
 	"encoding/xml"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"time"
 )
+
+const userAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:109.0) Gecko/20100101 Firefox/109.0"
 
 // Frequency is a type alias for change frequency.
 type Frequency = string
@@ -94,21 +98,15 @@ func ParseFromFile(sitemapPath string, consumer EntryConsumer) error {
 
 // ParseFromSite downloads sitemap from a site, parses it and for each sitemap
 // entry calls the consumer's function.
-func ParseFromSite(url string, consumer EntryConsumer) error {
-	res, err := http.Get(url)
+func ParseFromSite(ctx context.Context, url string, consumer EntryConsumer) error {
+	body, err := get(ctx, url)
 	if err != nil {
 		return err
 	}
-	defer res.Body.Close()
-	reader := res.Body
-	if res.Header.Get("Content-Encoding") == "gzip" {
-		reader, err = gzip.NewReader(res.Body)
-		if err != nil {
-			return err
-		}
-		defer reader.Close()
-	}
-	return Parse(reader, consumer)
+
+	defer body.Close()
+
+	return Parse(body, consumer)
 }
 
 // IndexEntryConsumer is a type represents consumer of parsed sitemaps indexes entries
@@ -136,12 +134,36 @@ func ParseIndexFromFile(sitemapPath string, consumer IndexEntryConsumer) error {
 
 // ParseIndexFromSite downloads sitemap index from a site, parses it and for each sitemap
 // index entry calls the consumer's function.
-func ParseIndexFromSite(sitemapURL string, consumer IndexEntryConsumer) error {
-	res, err := http.Get(sitemapURL)
+func ParseIndexFromSite(ctx context.Context, sitemapURL string, consumer IndexEntryConsumer) error {
+	body, err := get(ctx, sitemapURL)
 	if err != nil {
 		return err
 	}
-	defer res.Body.Close()
 
-	return ParseIndex(res.Body, consumer)
+	defer body.Close()
+
+	return ParseIndex(body, consumer)
+}
+
+func get(ctx context.Context, url string) (io.ReadCloser, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("User-Agent", userAgent)
+
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	if res.StatusCode >= 400 {
+		return nil, fmt.Errorf("sitemap error due to request %s with response status code %d", url, res.StatusCode)
+	}
+
+	if res.Header.Get("Content-Encoding") == "gzip" {
+		return gzip.NewReader(res.Body)
+	}
+
+	return res.Body, nil
 }
